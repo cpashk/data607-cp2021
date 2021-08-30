@@ -1,0 +1,30 @@
+---
+title: "Presidental Approval Polls from 538"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+```{r include=FALSE}
+library(tidyverse)
+```
+## Overview - Presidential Approval Polls
+
+This dataframe contain 538's current approval ratings for current president Joe Biden as of August 29, 2021([csv](https://projects.fivethirtyeight.com/polls-page/data/president_approval_polls.csv)). They are available on 538's github repo along with [other political polls](https://github.com/fivethirtyeight/data/tree/master/polls). The [most recent data](https://projects.fivethirtyeight.com/biden-approval-rating/) show a dip in his approval rating from slightly about 50% to slightly below.
+
+```{r}
+polls_raw <- read.csv(url("https://projects.fivethirtyeight.com/polls-page/data/president_approval_polls.csv"))
+
+polls <- rename(polls_raw, population_abbrev = population)
+
+polls_cleaned <- mutate(polls, population = case_when(
+    population_abbrev == 'a' ~ 'All Adults',
+    population_abbrev == 'lv' ~ 'Likely Voters',
+    population_abbrev == 'rv' ~ 'Registered Voters',
+    TRUE ~ 'Other'
+  )
+)
+
+polls_final <- select(polls_cleaned, created_at, politician, pollster, sponsors, five_thiry_eight_grade = fte_grade, population, url, yes, no)
+```
