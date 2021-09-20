@@ -1,6 +1,6 @@
 library(readtext)
 
-# edit to github.com/cpashk/ for remote, default is my home subdirectory
+# default is my home subdirectory
 BASE <- '~/code/'
 
 FILE <-  "data607-cp2021/p1/tournamentinfo.txt"
