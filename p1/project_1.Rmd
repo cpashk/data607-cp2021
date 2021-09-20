@@ -1,6 +1,15 @@
+---
+title: "Data 606 - Project 1"
+output: html_document
+---
+```{r packages}
 library(readtext)
 library(tidyverse)
+```
 
+## Construct a path and load the file
+
+```{r}
 # default is my home subdirectory
 BASE <- '~/code/'
 
@@ -11,7 +20,11 @@ PATH <- str_c(BASE, FILE)
 txtfile <- readtext(PATH)
 
 chess_raw <- as_tibble(txtfile["text"])
+```
 
+## Create some useful values for our dataframe
+
+```{r}
 # use a regex to extract literal record seperator
 dash_bound <- str_extract(chess_raw, '-+')
 
@@ -22,7 +35,12 @@ cols <- c("player_id_raw", "player_name", "total_points",
           "player_state", "player_uid", "pre_rating_raw", "post_rating", 
           "n_something", "r1_color","r2_color", "r3_color", "r4_color", 
           "r5_color", "r6_color", "r7_color")
+          
+```
 
+## Start splitting the raw input into fields
+
+```{r}
 # start by splitting the text using the dash boundary
 chess_split <- str_split(chess_raw, dash_bound)[[1]] %>% 
   str_subset('.') %>% # drop empty rows
@@ -45,10 +63,14 @@ map_score <- function(outcome) {
     outcome %in% c("L", "U") ~ 0 # loss or unplayed = 0 pts
   )
 }
+```
 
+## We'll use the pivot_longer to turn out individual round columns into rows, which will make joining data easier later on
 
+```{r}
 # create a list with my ruund detail column names
 result_cols <- str_c("r", 1:7)
+
 
 
 long_format <- chess_split %>% 
@@ -66,9 +88,11 @@ long_format <- chess_split %>%
   mutate(player_id = strtoi(player_id_raw)) %>%
   # subset to important columns
   select(player_id, player_name, player_state, pre_rating, round, points, opp_id, match_completed) 
+```
 
+## Now that we've got most of our data, we can start using calculations
 
-
+```{r}
 # create a lookup table of player ratings
 player_pre_ratintgs <- distinct(long_format, player_id, pre_rating)
 
@@ -85,11 +109,13 @@ summarized_data <- long_format %>%
     unplayed_match_count = sum(case_when(match_completed == FALSE ~ 1, match_completed == TRUE ~ 0)),
     expected_points = sum(exp_match_points, na.rm = TRUE)
     ) %>%
-  mutate(expected_pt_diff = total_points - expected_points) %>%
-  # sort by expected point difference to calculate extra credit
-  arrange(desc(expected_pt_diff))
+  mutate(expected_pt_diff = total_points - expected_points)
 
+```
 
+## Since the instructions specify that we're interested in two separate groups, we'll split output
+
+```{r}
 # filtering sets to only the requested columns, and splitting output for players who completed all scheduled matches
 only_requested_cols__all_matches_played <- summarized_data %>% 
   filter(unplayed_match_count == 0) %>%
@@ -101,7 +127,12 @@ only_requested_cols__matches_unplayed <- summarized_data %>%
 
 write.csv(only_requested_cols__matches_unplayed, "players_with_unplayed_matches.csv")
 write.csv(only_requested_cols__all_matches_played, "players_without_unplayed_matches.csv")
+```
 
-# EXTRA CREDIT
+## EXTRA CREDIT
+
+```{r data}
 # head to see Aditya Bajaj had the highest point difference
-head(summarized_data, 1)
+head(summarized_data %>% arrange(desc(expected_pt_diff)), 1)
+```
+
