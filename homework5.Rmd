@@ -1,0 +1,51 @@
+---
+title: "Homework Week 5"
+author: "Chase Pashkowich"
+date: "9/27/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+```
+
+
+```{r cars}
+vax <- read.csv(file = "~/code/data607-cp2021/homework5.csv", header = TRUE)
+
+```
+1. Do you have enough information to calculate the total population? What does this population represent?
+
+Based on the naming conventions, I would guess that the categories here represent fully vaccinated and fully unvaccinated people. Given that each category has percentages lists, we can calculate the middle group's (people awaiting a second shot or in the incubation period) population size. I calculated the total population at approximately 7,155,090. Given that this population is several million below Israel's actual population, it seems likely the children who are too young to be vaccinated would also be omitted from this table.
+
+```{r}
+
+vax_clean <- vax %>%
+  mutate(unvax_ct = as.integer(str_remove_all(Not.vax.count, ',')),
+    vax_ct = as.integer(str_remove_all(Fully.vax.count, ',')),
+    unvax_pct = as.numeric(str_remove_all(Not.vax.pct, '%')) / 100,
+    vax_pct = as.numeric(str_remove_all(Fully.vax.pct, '%')) / 100) %>%
+  mutate(rep_pop = unvax_ct + vax_ct,
+         rep_pop_pct = unvax_pct + vax_pct) %>%
+  mutate(total_pop = rep_pop / rep_pop_pct,
+         incub_pop = total_pop - rep_pop)
+vax_clean
+sum(vax_clean$incub_pop)
+sum(vax_clean$total_pop)
+```
+2 & 3. Calculate the Efficacy vs. Disease.
+
+The vaccine efficacy is 0.74 for the 50 and Under bucket, but -0.70 for Over 50. That seems to indicate that the vaccine is ineffective in the elderly, or there may be some bias in that population - perhaps older people got vaccinated and returned to normal behavior where they should have remained cautious about public life.
+
+```{r}
+
+vax_clean
+vax_clean %>% 
+  mutate(ve = 1 - (Sever.cases.per.100k...fully.vax / Sever.cases.per.100k...not.vax)) %>%
+  select(Age, ve)
+
+
+1 - (.2037 / .7963)
+```
+
